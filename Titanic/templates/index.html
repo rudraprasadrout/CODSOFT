@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Titanic Survival Predictor — Rudra Prasad Rout</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink:   #0d0d0d;
+      --paper: #f5f0e8;
+      --rust:  #b5341a;
+      --gold:  #c9952a;
+      --ocean: #1a3a5c;
+      --mist:  #d6cfc3;
+      --green: #2a6640;
+      --red:   #8b1a1a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: relative; z-index: 1;
+      border-bottom: 3px double var(--ink);
+      padding: 2rem 3rem 1.5rem;
+      display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem;
+    }
+    .masthead { display: flex; flex-direction: column; gap: 0.2rem; }
+    .paper-tag {
+      font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase;
+      color: var(--rust); border: 1px solid var(--rust);
+      display: inline-block; padding: 2px 8px; width: fit-content;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      font-weight: 900; line-height: 1; letter-spacing: -0.02em;
+    }
+    h1 em { font-style: italic; color: var(--rust); }
+    .dateline { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: #666; margin-top: 0.4rem; }
+    .edition-badge {
+      font-family: 'Playfair Display', serif; font-size: 0.75rem;
+      text-align: right; color: #555; line-height: 1.6;
+      border-left: 1px solid var(--mist); padding-left: 1.2rem; flex-shrink: 0;
+    }
+
+    /* ── DECK ── */
+    .deck {
+      position: relative; z-index: 1;
+      border-bottom: 1px solid var(--ink);
+      padding: 0.6rem 3rem; font-size: 0.72rem;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      display: flex; gap: 2rem; align-items: center; color: #444;
+    }
+    .deck span { display: flex; align-items: center; gap: 0.4rem; }
+    .dot { width: 5px; height: 5px; background: var(--rust); border-radius: 50%; }
+
+    /* ── TAB BAR ── */
+    .tab-bar {
+      position: relative; z-index: 1;
+      border-bottom: 2px solid var(--ink);
+      display: flex; padding: 0 3rem;
+    }
+    .tab {
+      font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 0.75rem 1.4rem; cursor: pointer; border: none;
+      background: transparent; font-family: 'DM Mono', monospace;
+      color: #888; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: color 0.2s, border-color 0.2s;
+    }
+    .tab:hover { color: var(--ink); }
+    .tab.active { color: var(--rust); border-bottom-color: var(--rust); }
+
+    /* ── PANELS ── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── MAIN GRID ── */
+    .page {
+      position: relative; z-index: 1;
+      max-width: 1100px; margin: 0 auto;
+      padding: 2.5rem 2rem;
+      display: grid; grid-template-columns: 1fr 380px;
+      gap: 3rem; align-items: start;
+    }
+
+    .column-head {
+      font-family: 'Playfair Display', serif; font-size: 1.05rem;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      border-bottom: 2px solid var(--ink); padding-bottom: 0.4rem; margin-bottom: 1.5rem;
+    }
+
+    /* ── FORM ── */
+    .intro-text { font-size: 0.78rem; line-height: 1.8; color: #444; margin-bottom: 1.8rem; max-width: 520px; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem 1.5rem; }
+    .field { display: flex; flex-direction: column; gap: 0.4rem; }
+    .field.full { grid-column: 1 / -1; }
+    label { font-size: 0.6rem; letter-spacing: 0.22em; text-transform: uppercase; color: #555; font-weight: 500; }
+    input, select {
+      background: transparent; border: none; border-bottom: 1.5px solid var(--ink);
+      padding: 0.45rem 0.2rem; font-family: 'DM Mono', monospace;
+      font-size: 0.92rem; color: var(--ink); width: 100%;
+      outline: none; transition: border-color 0.2s;
+      -webkit-appearance: none; appearance: none; border-radius: 0;
+    }
+    input:focus, select:focus { border-color: var(--rust); }
+    select {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230d0d0d' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 0.3rem center; padding-right: 1.5rem;
+    }
+    .field-hint { font-size: 0.58rem; color: #999; letter-spacing: 0.05em; margin-top: -0.15rem; }
+
+    .submit-row { margin-top: 2rem; display: flex; align-items: center; gap: 1.5rem; }
+    #submitBtn {
+      background: var(--ink); color: var(--paper); border: none;
+      font-family: 'DM Mono', monospace; font-size: 0.72rem;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 0.85rem 2.2rem; cursor: pointer;
+      position: relative; overflow: hidden; transition: transform 0.15s;
+    }
+    #submitBtn:hover { transform: translateY(-1px); }
+    #submitBtn:active { transform: translateY(0); }
+    #submitBtn::after {
+      content: ''; position: absolute; inset: 0;
+      background: var(--rust); transform: scaleX(0);
+      transform-origin: left; transition: transform 0.25s ease;
+    }
+    #submitBtn:hover::after { transform: scaleX(1); }
+    #submitBtn span { position: relative; z-index: 1; }
+    #submitBtn.loading { pointer-events: none; opacity: 0.7; }
+
+    .api-status { font-size: 0.62rem; letter-spacing: 0.1em; color: #888; display: flex; align-items: center; gap: 0.4rem; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #ccc; transition: background 0.3s; }
+    .status-dot.ok   { background: var(--green); }
+    .status-dot.err  { background: var(--red); }
+    .status-dot.ping { animation: pulse 1s infinite; background: var(--gold); }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+    .error-box {
+      display: none; border: 1px solid var(--rust); background: #fff5f3;
+      padding: 1rem; margin-top: 1rem; font-size: 0.72rem; line-height: 1.7; color: var(--rust);
+    }
+    .error-box.visible { display: block; }
+
+    .batch-toggle { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px dashed var(--mist); }
+    .batch-toggle summary {
+      cursor: pointer; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: #777; list-style: none; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .batch-toggle summary::before { content: '+'; font-size: 1rem; color: var(--rust); transition: transform 0.2s; }
+    .batch-toggle[open] summary::before { transform: rotate(45deg); }
+    .batch-info {
+      font-size: 0.7rem; color: #666; line-height: 1.8; margin-top: 0.8rem;
+      padding: 1rem; background: rgba(0,0,0,0.03); border-left: 2px solid var(--gold);
+    }
+    .batch-info code { display: block; margin-top: 0.6rem; font-size: 0.65rem; color: var(--ocean); white-space: pre; }
+
+    /* ── RESULT ── */
+    .result-section { position: sticky; top: 2rem; }
+    .result-card {
+      border: 2px solid var(--ink); padding: 2rem; min-height: 320px;
+      display: flex; flex-direction: column; position: relative; overflow: hidden; transition: background 0.5s;
+    }
+    .result-card.survived { background: #edf5f0; }
+    .result-card.perished { background: #f5eded; }
+    .result-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 5px; background: var(--mist); transition: background 0.5s;
+    }
+    .result-card.survived::before { background: var(--green); }
+    .result-card.perished::before { background: var(--red); }
+    .result-empty {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center; gap: 1rem; color: #aaa;
+    }
+    .result-empty .ship-icon { font-size: 3rem; opacity: 0.25; animation: float 4s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)} }
+    .result-empty p { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; }
+    .result-body { display: none; flex-direction: column; gap: 1.5rem; }
+    .result-body.visible { display: flex; }
+    .verdict { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 900; line-height: 1; letter-spacing: -0.02em; }
+    .verdict.survived-text { color: var(--green); }
+    .verdict.perished-text { color: var(--red); }
+    .verdict-sub { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: #666; margin-top: 0.3rem; }
+    .prob-label { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: #777; margin-bottom: 0.5rem; display: flex; justify-content: space-between; }
+    .prob-track { height: 6px; background: var(--mist); position: relative; overflow: hidden; }
+    .prob-fill { height: 100%; width: 0%; transition: width 1s cubic-bezier(0.22,1,0.36,1); }
+    .prob-fill.survived-fill { background: var(--green); }
+    .prob-fill.perished-fill { background: var(--red); }
+    .prob-number { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-top: 0.6rem; }
+    .pax-summary { border-top: 1px solid var(--mist); padding-top: 1.2rem; }
+    .pax-label { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: #999; margin-bottom: 0.7rem; }
+    .pax-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1rem; }
+    .pax-item { font-size: 0.72rem; }
+    .pax-item span { color: #888; margin-right: 0.3rem; }
+    .ornament { text-align: center; font-family: 'Playfair Display', serif; color: var(--mist); font-size: 1.2rem; margin: 0 0 1.5rem; }
+
+    /* ── ABOUT PANEL ── */
+    .about-page {
+      position: relative; z-index: 1;
+      max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start;
+    }
+    .about-block { margin-bottom: 2.2rem; }
+    .about-block:last-child { margin-bottom: 0; }
+    .about-heading {
+      font-family: 'Playfair Display', serif; font-size: 0.85rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em; color: var(--rust); margin-bottom: 0.8rem;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .about-heading::after { content: ''; flex: 1; height: 1px; background: var(--mist); }
+    .about-text { font-size: 0.78rem; line-height: 2; color: #444; }
+    .problem-list { list-style: none; margin-top: 0.6rem; }
+    .problem-list li { font-size: 0.75rem; line-height: 1.9; color: #444; padding-left: 1.2rem; position: relative; margin-bottom: 0.3rem; }
+    .problem-list li::before { content: '→'; position: absolute; left: 0; color: var(--rust); font-size: 0.7rem; }
+    .model-table { width: 100%; border-collapse: collapse; margin-top: 0.8rem; font-size: 0.72rem; }
+    .model-table th {
+      text-align: left; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+      font-size: 0.6rem; color: #888; border-bottom: 1px solid var(--mist); padding: 0.4rem 0.6rem;
+    }
+    .model-table td { padding: 0.45rem 0.6rem; border-bottom: 1px solid #ede8df; color: #333; }
+    .model-table tr:last-child td { border-bottom: none; }
+    .model-table .best { color: var(--green); font-weight: 500; }
+    .tech-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.7rem; }
+    .chip { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--mist); padding: 3px 10px; color: #555; }
+
+    /* ── CREDITS PANEL ── */
+    .credits-page {
+      position: relative; z-index: 1;
+      max-width: 660px; margin: 0 auto; padding: 3rem 2rem;
+      text-align: center;
+    }
+    .avatar-ring {
+      width: 100px; height: 100px; border-radius: 50%;
+      border: 3px solid var(--ink); margin: 0 auto 1.5rem;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 900;
+      color: var(--rust); background: var(--paper); position: relative;
+    }
+    .avatar-ring::before {
+      content: ''; position: absolute; inset: -7px;
+      border-radius: 50%; border: 1px dashed var(--mist);
+    }
+    .creator-name { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 0.3rem; }
+    .creator-role { font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--rust); margin-bottom: 0.2rem; }
+    .creator-org { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: #888; margin-bottom: 2rem; }
+    .internship-badge {
+      display: inline-flex; align-items: center; gap: 0.7rem;
+      border: 2px solid var(--gold); padding: 0.6rem 1.4rem; margin-bottom: 2rem;
+      font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold);
+    }
+    .divider-ornament { font-family: 'Playfair Display', serif; color: var(--mist); font-size: 1.4rem; margin: 1.5rem 0; }
+    .creator-bio { font-size: 0.78rem; line-height: 2; color: #555; max-width: 500px; margin: 0 auto 2rem; }
+
+    /* Social links */
+    .social-row { display: flex; justify-content: center; gap: 2rem; margin-top: 2rem; }
+    .social-link {
+      display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
+      text-decoration: none; color: var(--ink); transition: transform 0.2s, color 0.2s;
+    }
+    .social-link:hover { transform: translateY(-5px); color: var(--rust); }
+    .social-icon {
+      width: 56px; height: 56px; border: 2px solid var(--ink);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .social-link:hover .social-icon { background: var(--ink); }
+    .social-icon svg { width: 24px; height: 24px; transition: fill 0.2s, stroke 0.2s; }
+    .social-icon .stroke-icon { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .social-icon .fill-icon  { fill: var(--ink); stroke: none; }
+    .social-link:hover .social-icon .stroke-icon { stroke: var(--paper); }
+    .social-link:hover .social-icon .fill-icon  { fill: var(--paper); }
+    .social-label { font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase; color: #888; transition: color 0.2s; }
+    .social-link:hover .social-label { color: var(--rust); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 3px double var(--ink); padding: 1rem 3rem;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: #999;
+      position: relative; z-index: 1;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 760px) {
+      .page, .about-page { grid-template-columns: 1fr; }
+      .result-section { position: static; }
+      header { padding: 1.2rem; flex-direction: column; align-items: flex-start; }
+      .deck { padding: 0.5rem 1.2rem; flex-wrap: wrap; gap: 0.8rem; }
+      .tab-bar { padding: 0 1rem; }
+      .page, .about-page, .credits-page { padding: 1.5rem 1.2rem; }
+      footer { padding: 0.8rem 1.2rem; flex-direction: column; gap: 0.4rem; text-align: center; }
+      .field-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: 1; }
+      .social-row { gap: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="masthead">
+    <div class="paper-tag">CodSoft Internship · Machine Learning</div>
+    <h1>The <em>Titanic</em><br>Oracle</h1>
+    <div class="dateline">Survival Prediction Engine &nbsp;·&nbsp; Flask API &nbsp;·&nbsp; By Rudra Prasad Rout</div>
+  </div>
+  <div class="edition-badge">
+    Random<br>Forest<br>Classifier<br>—<br>Flask API
+  </div>
+</header>
+
+<!-- ══ DECK ══ -->
+<div class="deck">
+  <span><span class="dot"></span> Enter passenger details</span>
+  <span><span class="dot"></span> Model analyzes 6 features</span>
+  <span><span class="dot"></span> Receive survival verdict</span>
+</div>
+
+<!-- ══ TABS ══ -->
+<div class="tab-bar">
+  <button class="tab active" onclick="switchTab('predictor', this)">Predictor</button>
+  <button class="tab" onclick="switchTab('about', this)">About the Project</button>
+  <button class="tab" onclick="switchTab('credits', this)">Credits</button>
+</div>
+
+<!-- ══════════════════════════
+     PANEL 1 — PREDICTOR
+══════════════════════════ -->
+<div class="panel active" id="panel-predictor">
+<main class="page">
+  <section class="form-section">
+    <div class="column-head">Passenger Manifest</div>
+    <p class="intro-text">
+      Submit a passenger's particulars to the predictive engine. The model, trained on 889 historical records from the Titanic disaster of 1912, determines the probability of survival based on six key features.
+    </p>
+    <div class="field-grid">
+      <div class="field">
+        <label for="pclass">Passenger Class</label>
+        <select id="pclass">
+          <option value="">— Select —</option>
+          <option value="1">1st Class</option>
+          <option value="2">2nd Class</option>
+          <option value="3">3rd Class</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="sex">Sex</label>
+        <select id="sex">
+          <option value="">— Select —</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="age">Age (years)</label>
+        <input type="number" id="age" min="0" max="120" placeholder="e.g. 34" />
+      </div>
+      <div class="field">
+        <label for="fare">Ticket Fare (£)</label>
+        <input type="number" id="fare" min="0" step="0.01" placeholder="e.g. 52.00" />
+      </div>
+      <div class="field">
+        <label for="embarked">Port of Embarkation</label>
+        <select id="embarked">
+          <option value="">— Select —</option>
+          <option value="S">Southampton (S)</option>
+          <option value="C">Cherbourg (C)</option>
+          <option value="Q">Queenstown (Q)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="familySize">Family Size</label>
+        <input type="number" id="familySize" min="1" max="20" placeholder="e.g. 1 (alone)" />
+        <span class="field-hint">Self + siblings + spouse + parents + children</span>
+      </div>
+      <div class="field full">
+        <label for="apiUrl">API Endpoint</label>
+        <input type="text" id="apiUrl" value="http://localhost:5000/predict" />
+        <span class="field-hint">Change if your Flask server runs on a different host/port</span>
+      </div>
+    </div>
+    <div class="submit-row">
+      <button id="submitBtn"><span>Consult the Oracle</span></button>
+      <div class="api-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Not connected</span>
+      </div>
+    </div>
+    <div class="error-box" id="errorBox"></div>
+    <details class="batch-toggle">
+      <summary>Batch prediction via API</summary>
+      <div class="batch-info">
+        Send an array to <strong>/predict/batch</strong> to predict multiple passengers at once:
+        <code>POST http://localhost:5000/predict/batch
+Content-Type: application/json
+
+[
+  {"Pclass":1,"Sex":"female","Age":28,"Fare":72,"Embarked":"S","FamilySize":1},
+  {"Pclass":3,"Sex":"male","Age":22,"Fare":7.25,"Embarked":"S","FamilySize":2}
+]</code>
+      </div>
+    </details>
+  </section>
+
+  <aside class="result-section">
+    <div class="column-head">Verdict</div>
+    <div class="result-card" id="resultCard">
+      <div class="result-empty" id="resultEmpty">
+        <div class="ship-icon">🚢</div>
+        <p>Awaiting passenger details</p>
+      </div>
+      <div class="result-body" id="resultBody">
+        <div>
+          <div class="verdict" id="verdictText"></div>
+          <div class="verdict-sub" id="verdictSub"></div>
+        </div>
+        <div class="prob-section">
+          <div class="prob-label">
+            <span>Survival Probability</span>
+            <span id="probPct">—</span>
+          </div>
+          <div class="prob-track"><div class="prob-fill" id="probFill"></div></div>
+          <div class="prob-number" id="probNumber"></div>
+        </div>
+        <div class="pax-summary">
+          <div class="pax-label">Passenger Summary</div>
+          <div class="pax-grid" id="paxGrid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="ornament" style="margin-top:1.2rem;">⸻ ✦ ⸻</div>
+    <div style="font-size:0.65rem;color:#999;line-height:1.8;text-align:center;">
+      Predictions are probabilistic estimates<br>based on historical training data.
+    </div>
+  </aside>
+</main>
+</div>
+
+<!-- ══════════════════════════
+     PANEL 2 — ABOUT
+══════════════════════════ -->
+<div class="panel" id="panel-about">
+<div class="about-page">
+
+  <div>
+    <div class="about-block">
+      <div class="column-head">About This Project</div>
+      <p class="about-text">
+        This project was built as part of the <strong>CodSoft Machine Learning Internship</strong>. The goal was to apply end-to-end machine learning — from raw data exploration all the way to a deployed prediction API — on the classic Titanic passenger dataset.
+      </p>
+      <p class="about-text" style="margin-top:0.8rem;">
+        The dataset contains records of 891 passengers aboard the RMS Titanic, which sank on April 15, 1912. The challenge: predict whether a given passenger survived based on their demographic and ticketing information. 38% of passengers survived the disaster.
+      </p>
+    </div>
+
+    <div class="about-block">
+      <div class="about-heading">Problems Found &amp; Solved</div>
+      <ul class="problem-list">
+        <li><strong>Missing Age values</strong> — 177 out of 891 passengers had no age recorded. Solved by filling with the column mean, then casting to integer to keep the dtype consistent.</li>
+        <li><strong>Missing Embarked values</strong> — 2 rows had no port of embarkation. Since it was negligible, those rows were dropped with <code>dropna</code>.</li>
+        <li><strong>Irrelevant columns</strong> — PassengerId, Name, Ticket, and Cabin had no predictive value and added noise. All four were dropped before modelling.</li>
+        <li><strong>Categorical encoding</strong> — Sex (male/female) was label-encoded to 0/1. Embarked (S/C/Q) was ordinally mapped to 2/0/1 based on frequency.</li>
+        <li><strong>Skewed Fare distribution</strong> — Fare was heavily right-skewed with many outliers. A log1p transform was applied inside the sklearn Pipeline to normalise the distribution without touching the raw data.</li>
+        <li><strong>Feature engineering</strong> — SibSp (siblings/spouses aboard) and Parch (parents/children aboard) were merged into a single <em>FamilySize</em> feature (SibSp + Parch + 1). This reduced dimensionality and captured the insight that solo travellers and very large families had notably lower survival rates.</li>
+      </ul>
+    </div>
+
+    <div class="about-block">
+      <div class="about-heading">Tech Stack</div>
+      <div class="tech-chips">
+        <span class="chip">Python 3.12</span>
+        <span class="chip">Pandas</span>
+        <span class="chip">NumPy</span>
+        <span class="chip">scikit-learn</span>
+        <span class="chip">XGBoost</span>
+        <span class="chip">Matplotlib</span>
+        <span class="chip">Seaborn</span>
+        <span class="chip">Flask</span>
+        <span class="chip">Flask-CORS</span>
+        <span class="chip">Pickle</span>
+        <span class="chip">HTML · CSS · JS</span>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="about-block">
+      <div class="column-head">Model Comparison</div>
+      <p class="about-text">Four classifiers were trained inside identical sklearn Pipelines, each with the same log1p Fare preprocessor via ColumnTransformer:</p>
+      <table class="model-table">
+        <thead>
+          <tr><th>Model</th><th>Configuration</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="best">Random Forest</td>
+            <td>Default, 100 trees</td>
+            <td class="best">✦ Selected</td>
+          </tr>
+          <tr>
+            <td>XGBoost</td>
+            <td>100 est · lr=0.1 · depth=5</td>
+            <td>Strong</td>
+          </tr>
+          <tr>
+            <td>Logistic Regression</td>
+            <td>Default params</td>
+            <td>Good</td>
+          </tr>
+          <tr>
+            <td>Decision Tree</td>
+            <td>depth=5 · min_split=10</td>
+            <td>Decent</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="about-text" style="margin-top:0.8rem;">
+        Random Forest was selected as the final production model for its robustness to overfitting and strong generalisation. The trained pipeline was serialised with <code>pickle</code> and served via a Flask REST API.
+      </p>
+    </div>
+
+    <div class="about-block">
+      <div class="about-heading">Features Used</div>
+      <ul class="problem-list">
+        <li><strong>Pclass</strong> — Ticket class (1, 2, 3). Strong proxy for socioeconomic status and cabin deck location.</li>
+        <li><strong>Sex</strong> — "Women and children first" was enforced during evacuation, making sex the single strongest predictor.</li>
+        <li><strong>Age</strong> — Children had higher priority. Elderly passengers had lower survival rates due to mobility.</li>
+        <li><strong>Fare</strong> — Log-transformed. Highly correlated with class and therefore deck/lifeboat proximity.</li>
+        <li><strong>Embarked</strong> — Port of boarding. Correlated with passenger class mix on that boarding group.</li>
+        <li><strong>FamilySize</strong> — Engineered. Passengers travelling alone or in groups of 5+ had the lowest survival rates.</li>
+      </ul>
+    </div>
+
+    <div class="about-block">
+      <div class="about-heading">Pipeline Architecture</div>
+      <p class="about-text">
+        All preprocessing lives inside an sklearn <code>Pipeline</code> with a <code>ColumnTransformer</code> that applies log1p only to the Fare column, passing all other features through unchanged (<code>remainder='passthrough'</code>). This prevents data leakage and means the full model — preprocessing + classifier — is packaged in one <code>.pkl</code> file ready for inference.
+      </p>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══════════════════════════
+     PANEL 3 — CREDITS
+══════════════════════════ -->
+<div class="panel" id="panel-credits">
+<div class="credits-page">
+
+  <div class="avatar-ring">R</div>
+
+  <div class="creator-role">Created by</div>
+  <div class="creator-name">Rudra Prasad Rout</div>
+  <div class="creator-org">Data Science &amp; Machine Learning</div>
+
+  <div class="internship-badge">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2"/>
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+    </svg>
+    CodSoft Machine Learning Internship
+  </div>
+
+  <p class="creator-bio">
+    This Titanic Survival Predictor was built during the <strong>CodSoft ML Internship</strong> as a complete end-to-end machine learning project — covering exploratory data analysis, data cleaning, feature engineering, multi-model training &amp; comparison, REST API deployment with Flask, and a custom newspaper-themed frontend.
+  </p>
+
+  <div class="divider-ornament">⸻ ✦ ⸻</div>
+
+  <div style="font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:#aaa;margin-bottom:1.2rem;">Connect with me</div>
+
+  <!-- ── SOCIAL ICONS ── -->
+  <div class="social-row">
+
+    <!-- LinkedIn -->
+    <a class="social-link" href="https://www.linkedin.com/in/YOUR_LINKEDIN_USERNAME" target="_blank" rel="noopener" title="LinkedIn">
+      <div class="social-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path class="fill-icon" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+        </svg>
+      </div>
+      <span class="social-label">LinkedIn</span>
+    </a>
+
+    <!-- GitHub -->
+    <a class="social-link" href="https://github.com/YOUR_GITHUB_USERNAME" target="_blank" rel="noopener" title="GitHub">
+      <div class="social-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path class="fill-icon" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+        </svg>
+      </div>
+      <span class="social-label">GitHub</span>
+    </a>
+
+    <!-- Portfolio -->
+    <a class="social-link" href="https://YOUR_PORTFOLIO_URL.com" target="_blank" rel="noopener" title="Portfolio">
+      <div class="social-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <circle class="stroke-icon" cx="12" cy="12" r="10"/>
+          <line class="stroke-icon" x1="2" y1="12" x2="22" y2="12"/>
+          <path class="stroke-icon" d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </div>
+      <span class="social-label">Portfolio</span>
+    </a>
+
+  </div>
+
+  <div class="divider-ornament" style="margin-top:2.5rem;">⸻ ✦ ⸻</div>
+
+  <div style="font-size:0.62rem;color:#bbb;line-height:2.2;margin-top:0.5rem;">
+    Built with Python &nbsp;·&nbsp; Flask &nbsp;·&nbsp; scikit-learn &nbsp;·&nbsp; Vanilla JS<br>
+    Dataset: Titanic — Machine Learning from Disaster (Kaggle)<br>
+    &copy; 2024 Rudra Prasad Rout &nbsp;·&nbsp; CodSoft Machine Learning Internship
+  </div>
+
+</div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <span>Titanic Oracle &mdash; Rudra Prasad Rout</span>
+  <span>CodSoft ML Internship &nbsp;·&nbsp; Flask &nbsp;·&nbsp; RandomForestClassifier</span>
+  <span id="footerTime"></span>
+</footer>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  // ── TABS ──────────────────────────────────────────────────────────────────
+  function switchTab(name, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // ── FOOTER TIME ───────────────────────────────────────────────────────────
+  function updateTime() {
+    $('footerTime').textContent = new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+  updateTime(); setInterval(updateTime, 1000);
+
+  // ── API STATUS ────────────────────────────────────────────────────────────
+  async function checkStatus() {
+    const base = $('apiUrl').value.replace(/\/predict.*$/, '');
+    const dot = $('statusDot'), txt = $('statusText');
+    dot.className = 'status-dot ping'; txt.textContent = 'Connecting…';
+    try {
+      const res = await fetch(base + '/health', { signal: AbortSignal.timeout(3000) });
+      if (res.ok) { dot.className = 'status-dot ok';  txt.textContent = 'API online'; }
+      else         { dot.className = 'status-dot err'; txt.textContent = 'API error ' + res.status; }
+    } catch {
+      dot.className = 'status-dot err'; txt.textContent = 'API unreachable';
+    }
+  }
+  checkStatus();
+  $('apiUrl').addEventListener('change', checkStatus);
+
+  // ── PREDICT ───────────────────────────────────────────────────────────────
+  $('submitBtn').addEventListener('click', async () => {
+    clearError();
+    const pclass     = parseInt($('pclass').value);
+    const sex        = $('sex').value;
+    const age        = parseInt($('age').value);
+    const fare       = parseFloat($('fare').value);
+    const embarked   = $('embarked').value;
+    const familySize = parseInt($('familySize').value);
+    const apiUrl     = $('apiUrl').value.trim();
+
+    const errs = [];
+    if (!pclass)           errs.push('Please select a Passenger Class.');
+    if (!sex)              errs.push('Please select Sex.');
+    if (isNaN(age))        errs.push('Please enter a valid Age.');
+    if (isNaN(fare))       errs.push('Please enter a valid Fare.');
+    if (!embarked)         errs.push('Please select a Port of Embarkation.');
+    if (isNaN(familySize)) errs.push('Please enter Family Size (minimum 1).');
+    if (errs.length) { showError(errs.join('<br>')); return; }
+
+    const payload = { Pclass: pclass, Sex: sex, Age: age, Fare: fare, Embarked: embarked, FamilySize: familySize };
+    $('submitBtn').classList.add('loading');
+    $('submitBtn').querySelector('span').textContent = 'Consulting…';
+
+    try {
+      const res  = await fetch(apiUrl, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload), signal: AbortSignal.timeout(8000)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showError('API returned ' + res.status + ':<br>' + (data.errors ? data.errors.join('<br>') : data.error || 'Unknown error'));
+        return;
+      }
+      renderResult(data, payload);
+    } catch (err) {
+      if (err.name === 'TimeoutError') {
+        showError('Request timed out. Is the Flask server running on <code>' + apiUrl + '</code>?');
+      } else {
+        showError('Failed to reach API: ' + err.message + '<br><br>Make sure Flask is running and CORS is enabled via flask-cors.');
+      }
+    } finally {
+      $('submitBtn').classList.remove('loading');
+      $('submitBtn').querySelector('span').textContent = 'Consult the Oracle';
+    }
+  });
+
+  // ── RENDER ────────────────────────────────────────────────────────────────
+  function renderResult(data, payload) {
+    const survived = data.survived;
+    const prob     = data.survival_probability;
+    const probPct  = Math.round(prob * 100);
+
+    $('resultCard').className = 'result-card ' + (survived ? 'survived' : 'perished');
+    $('resultEmpty').style.display = 'none';
+    $('resultBody').classList.add('visible');
+
+    const vt = $('verdictText');
+    vt.textContent = survived ? 'Survived' : 'Perished';
+    vt.className   = 'verdict ' + (survived ? 'survived-text' : 'perished-text');
+    $('verdictSub').textContent = survived
+      ? 'This passenger likely made it to safety.'
+      : 'This passenger likely did not survive.';
+
+    const fill = $('probFill');
+    fill.className = 'prob-fill ' + (survived ? 'survived-fill' : 'perished-fill');
+    fill.style.width = '0%';
+    setTimeout(() => { fill.style.width = probPct + '%'; }, 50);
+    $('probPct').textContent = probPct + '%';
+    animateNumber($('probNumber'), 0, probPct, 900, v => v + '%');
+
+    const classLabel    = { 1:'1st Class', 2:'2nd Class', 3:'3rd Class' };
+    const embarkedLabel = { S:'Southampton', C:'Cherbourg', Q:'Queenstown' };
+    $('paxGrid').innerHTML = [
+      ['Class',    classLabel[payload.Pclass] || payload.Pclass],
+      ['Sex',      payload.Sex],
+      ['Age',      payload.Age + ' yrs'],
+      ['Fare',     '£' + payload.Fare.toFixed(2)],
+      ['Embarked', embarkedLabel[payload.Embarked] || payload.Embarked],
+      ['Family',   payload.FamilySize + (payload.FamilySize === 1 ? ' person' : ' persons')],
+    ].map(([k,v]) => `<div class="pax-item"><span>${k}:</span>${v}</div>`).join('');
+  }
+
+  function animateNumber(el, from, to, duration, fmt) {
+    const start = performance.now();
+    function step(now) {
+      const t    = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 4);
+      el.textContent = fmt(Math.round(from + (to - from) * ease));
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function showError(html) { const b=$('errorBox'); b.innerHTML='⚠ '+html; b.classList.add('visible'); }
+  function clearError()    { const b=$('errorBox'); b.innerHTML='';        b.classList.remove('visible'); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') $('submitBtn').click();
+  });
+</script>
+</body>
+</html>
