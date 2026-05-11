@@ -9,15 +9,17 @@ app = Flask(__name__)
 CORS(app)
 # Load the model once at startup
 # Get the directory where app.py is located
-model = None
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(BASE_DIR, "model.pkl")
+
+# Load the model using the absolute path
 try:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(BASE_DIR, "model.pkl")
     with open(model_path, "rb") as f:
         model = pickle.load(f)
-    print("✅ Model loaded successfully!")
-except Exception as e:
-    print(f"❌ CRITICAL ERROR: {e}")
+    print("Model loaded successfully!")
+except FileNotFoundError:
+    print(f"ERROR: Could not find model.pkl at {model_path}")
+    model = None
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 REQUIRED_FIELDS = ["Pclass", "Sex", "Age", "Fare", "Embarked", "FamilySize"]
