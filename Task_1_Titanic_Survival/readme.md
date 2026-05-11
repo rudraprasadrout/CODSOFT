@@ -13,8 +13,8 @@ This project was developed as part of the CodSoft Machine Learning Internship. I
 
 ## 🌐 Live Deployment
 
-- 🚀 Demo Web App: Titanic Survival Predictor (live demo link if deployed)
-- 🔌 Prediction API: Render API Endpoint (add your endpoint URL here)
+- 🚀 Demo Web App: Titanic Survival Predictor (https://titanicoracle.netlify.app/)
+- 🔌 Prediction API: Render API Endpoint (https://titanic-survival-prediction-d6bw.onrender.com)
 
 ---
 
@@ -143,4 +143,3 @@ MIT — modify as needed.
 
 ---
 
-If you'd like visual thumbnails added now, tell me which plots to create and I'll generate and embed them.
