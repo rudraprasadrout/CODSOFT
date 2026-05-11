@@ -1,7 +1,6 @@
-
-Flask
+flask
 flask-cors
-gunicorn
-pandas
 numpy
+pandas
 scikit-learn
+gunicorn
