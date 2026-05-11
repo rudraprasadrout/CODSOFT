@@ -669,7 +669,7 @@ Content-Type: application/json
     }
   }
   checkStatus();
-  $('apiUrl').addEventListener('change', checkStatus);
+
 
   // ── PREDICT ───────────────────────────────────────────────────────────────
   $('submitBtn').addEventListener('click', async () => {
@@ -680,7 +680,7 @@ Content-Type: application/json
     const fare       = parseFloat($('fare').value);
     const embarked   = $('embarked').value;
     const familySize = parseInt($('familySize').value);
-    const apiUrl     = $('apiUrl').value.trim();
+    const apiUrl = "https://titanic-survival-prediction-d6bw.onrender.com/predict";
 
     const errs = [];
     if (!pclass)           errs.push('Please select a Passenger Class.');
