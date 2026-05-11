@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import os
 import pickle
 import numpy as np
 import pandas as pd
@@ -7,9 +8,18 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 # Load the model once at startup
-with open("model.pkl", "rb") as f:
-    model = pickle.load(f)
+# Get the directory where app.py is located
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(BASE_DIR, "model.pkl")
 
+# Load the model using the absolute path
+try:
+    with open(model_path, "rb") as f:
+        model = pickle.load(f)
+    print("Model loaded successfully!")
+except FileNotFoundError:
+    print(f"ERROR: Could not find model.pkl at {model_path}")
+    model = None
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 REQUIRED_FIELDS = ["Pclass", "Sex", "Age", "Fare", "Embarked", "FamilySize"]
