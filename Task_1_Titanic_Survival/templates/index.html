@@ -391,11 +391,6 @@
         <input type="number" id="familySize" min="1" max="20" placeholder="e.g. 1 (alone)" />
         <span class="field-hint">Self + siblings + spouse + parents + children</span>
       </div>
-      <div class="field full">
-        <label for="apiUrl">API Endpoint</label>
-        <input type="text" id="apiUrl" value="http://localhost:5000/predict" />
-        <span class="field-hint">Change if your Flask server runs on a different host/port</span>
-      </div>
     </div>
     <div class="submit-row">
       <button id="submitBtn"><span>Consult the Oracle</span></button>
@@ -409,7 +404,7 @@
       <summary>Batch prediction via API</summary>
       <div class="batch-info">
         Send an array to <strong>/predict/batch</strong> to predict multiple passengers at once:
-        <code>POST http://localhost:5000/predict/batch
+        <code>POST https://titanic-survival-prediction-d6bw.onrender.com/predict/batch
 Content-Type: application/json
 
 [
