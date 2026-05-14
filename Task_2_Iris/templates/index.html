@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🌸 Iris Flower Classifier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Design tokens ───────────────────────────────────────── */
+    :root {
+      --rose:       #d4547a;
+      --blush:      #f2c4ce;
+      --lavender:   #b07fc4;
+      --deep:       #3b1f4e;
+      --cream:      #fdf6f0;
+      --leaf:       #5a8a5e;
+      --gold:       #c9a84c;
+      --white:      #ffffff;
+      --glass:      rgba(255,255,255,0.65);
+      --shadow:     0 8px 40px rgba(59,31,78,0.15);
+      --radius:     20px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--deep);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated petal background ──────────────────────────── */
+    .bg-canvas {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      overflow: hidden;
+    }
+    .petal {
+      position: absolute;
+      width: 18px; height: 28px;
+      border-radius: 50% 0 50% 0;
+      opacity: 0;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      0%   { transform: translateY(-80px) rotate(0deg); opacity: 0; }
+      10%  { opacity: 0.6; }
+      90%  { opacity: 0.3; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* ── Layout ─────────────────────────────────────────────── */
+    .wrapper {
+      position: relative; z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* ── Hero header ─────────────────────────────────────────── */
+    header {
+      text-align: center;
+      padding: 60px 0 48px;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--rose), var(--lavender));
+      color: var(--white);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 18px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+    }
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      line-height: 1.15;
+      color: var(--deep);
+    }
+    header h1 em {
+      font-style: italic;
+      color: var(--rose);
+    }
+    .subtitle {
+      margin-top: 14px;
+      font-size: 1.05rem;
+      color: #6a4f6b;
+      font-weight: 300;
+      max-width: 480px;
+      margin-inline: auto;
+    }
+
+    /* ── Decorative divider ──────────────────────────────────── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 48px 0 36px;
+    }
+    .divider span { font-size: 1.3rem; }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--blush), transparent);
+    }
+
+    /* ── Section heading ─────────────────────────────────────── */
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.55rem;
+      color: var(--deep);
+      margin-bottom: 8px;
+    }
+    .section-sub {
+      font-size: 0.9rem;
+      color: #8a6f8a;
+      margin-bottom: 28px;
+    }
+
+    /* ── About project card ──────────────────────────────────── */
+    .about-card {
+      background: var(--glass);
+      backdrop-filter: blur(14px);
+      border: 1.5px solid var(--blush);
+      border-radius: var(--radius);
+      padding: 36px 40px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+    .about-card p {
+      font-size: 0.975rem;
+      line-height: 1.8;
+      color: #4a3555;
+      margin-bottom: 14px;
+    }
+    .about-card p:last-child { margin-bottom: 0; }
+    .highlight {
+      background: linear-gradient(120deg, #f9d6df 0%, #ead5f5 100%);
+      border-left: 3px solid var(--rose);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin: 18px 0;
+      font-style: italic;
+      color: var(--deep);
+    }
+
+    /* ── Metrics row ─────────────────────────────────────────── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .metric-box {
+      background: linear-gradient(135deg, var(--rose), var(--lavender));
+      color: var(--white);
+      border-radius: 14px;
+      padding: 18px 12px;
+      text-align: center;
+    }
+    .metric-box .val {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+    }
+    .metric-box .lbl {
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      opacity: 0.85;
+      margin-top: 4px;
+    }
+
+    /* ── Predict card ────────────────────────────────────────── */
+    .predict-card {
+      background: var(--white);
+      border: 1.5px solid var(--blush);
+      border-radius: var(--radius);
+      padding: 36px 40px;
+      box-shadow: var(--shadow);
+    }
+
+    /* ── Input grid ──────────────────────────────────────────── */
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 520px) {
+      .input-grid { grid-template-columns: 1fr; }
+      .about-card, .predict-card { padding: 24px 20px; }
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--rose);
+      margin-bottom: 7px;
+    }
+    .field input {
+      width: 100%;
+      padding: 13px 16px;
+      border: 1.5px solid #e8cdd8;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: 'DM Sans', sans-serif;
+      background: #fdf8fb;
+      color: var(--deep);
+      outline: none;
+      transition: border-color .25s, box-shadow .25s;
+    }
+    .field input:focus {
+      border-color: var(--rose);
+      box-shadow: 0 0 0 3px rgba(212,84,122,0.12);
+    }
+    .field .hint {
+      font-size: 0.72rem;
+      color: #a07898;
+      margin-top: 4px;
+    }
+
+    /* ── Predict button ──────────────────────────────────────── */
+    .btn-predict {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--rose) 0%, var(--lavender) 100%);
+      color: var(--white);
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: opacity .2s, transform .15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-predict::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background .2s;
+    }
+    .btn-predict:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-predict:active { transform: translateY(0); }
+    .btn-predict:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ── Result panel ────────────────────────────────────────── */
+    #result { margin-top: 28px; display: none; }
+    .result-card {
+      border-radius: var(--radius);
+      padding: 32px 36px;
+      animation: bloom .5s ease;
+    }
+    @keyframes bloom {
+      from { opacity: 0; transform: scale(0.96) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .result-species {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--white);
+    }
+    .result-emoji { font-size: 2.8rem; margin-bottom: 8px; display: block; }
+    .result-desc {
+      margin-top: 10px;
+      font-size: 0.92rem;
+      color: rgba(255,255,255,0.88);
+      line-height: 1.6;
+    }
+    .confidence-label {
+      margin-top: 18px;
+      font-size: 0.7rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+    }
+    .confidence-bar-wrap {
+      margin-top: 6px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 100px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .confidence-bar {
+      height: 100%;
+      background: var(--white);
+      border-radius: 100px;
+      transition: width 1s ease;
+    }
+    .confidence-val {
+      color: var(--white);
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    /* ── Probability bars ────────────────────────────────────── */
+    .prob-section {
+      margin-top: 22px;
+    }
+    .prob-row { margin-bottom: 10px; }
+    .prob-row-top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 4px;
+    }
+    .prob-mini-bar-wrap {
+      background: rgba(255,255,255,0.2);
+      border-radius: 100px;
+      height: 5px;
+      overflow: hidden;
+    }
+    .prob-mini-bar {
+      height: 100%;
+      background: rgba(255,255,255,0.75);
+      border-radius: 100px;
+      transition: width 1s ease;
+    }
+
+    /* ── Error box ───────────────────────────────────────────── */
+    .error-box {
+      background: #ffeef2;
+      border: 1.5px solid #f5a0b0;
+      border-radius: 12px;
+      padding: 14px 18px;
+      color: #922b40;
+      font-size: 0.9rem;
+      margin-top: 16px;
+      display: none;
+    }
+
+    /* ── API info ────────────────────────────────────────────── */
+    .api-block {
+      background: #1e1028;
+      color: #e8d5f5;
+      border-radius: 14px;
+      padding: 22px 26px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      line-height: 1.9;
+      overflow-x: auto;
+      margin-top: 16px;
+    }
+    .api-block .method { color: #f48fb1; }
+    .api-block .url    { color: #ce93d8; }
+    .api-block .key    { color: #80cbc4; }
+    .api-block .val    { color: #fff59d; }
+
+    /* ── Credits footer ──────────────────────────────────────── */
+    footer {
+      text-align: center;
+      margin-top: 70px;
+      padding: 40px 20px;
+      border-top: 1px solid var(--blush);
+    }
+    .created-by {
+      font-size: 0.78rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #b08ab0;
+      margin-bottom: 6px;
+    }
+    .creator-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      color: var(--deep);
+    }
+    .internship-badge {
+      display: inline-block;
+      margin-top: 10px;
+      background: linear-gradient(135deg, var(--gold), #e6bc6a);
+      color: var(--white);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 5px 16px;
+      border-radius: 100px;
+    }
+    .social-icons {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 22px;
+    }
+    .social-icons a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 1.5px solid var(--blush);
+      box-shadow: 0 4px 14px rgba(212,84,122,0.12);
+      transition: transform .2s, box-shadow .2s;
+      text-decoration: none;
+    }
+    .social-icons a:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(212,84,122,0.22);
+    }
+    .social-icons svg { width: 22px; height: 22px; }
+
+    .footer-flowers {
+      font-size: 1.3rem;
+      letter-spacing: 6px;
+      margin-top: 22px;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Falling petals ──────────────────────────────────────────── -->
+<div class="bg-canvas" id="bgCanvas"></div>
+
+<div class="wrapper">
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <header>
+    <div class="hero-badge">Data Science · CodSoft Internship</div>
+    <h1>Iris Flower<br><em>Classifier</em></h1>
+    <p class="subtitle">Identify iris species from flower measurements using a trained Gaussian Naïve Bayes model.</p>
+  </header>
+
+  <!-- ── Predictor (Moved Up) ────────────────────────────────────── -->
+  <div class="divider"><span>🌺</span></div>
+
+  <p class="section-title">Try the Classifier</p>
+  <p class="section-sub">Enter flower measurements and discover its species instantly.</p>
+
+  <div class="predict-card">
+    <div class="input-grid">
+      <div class="field">
+        <label>Sepal Length</label>
+        <input type="number" id="sl" placeholder="e.g. 5.1" step="0.1" min="1" max="10"/>
+        <div class="hint">Range: 4.3 – 7.9 cm</div>
+      </div>
+      <div class="field">
+        <label>Sepal Width</label>
+        <input type="number" id="sw" placeholder="e.g. 3.5" step="0.1" min="1" max="5"/>
+        <div class="hint">Range: 2.0 – 4.4 cm</div>
+      </div>
+      <div class="field">
+        <label>Petal Length</label>
+        <input type="number" id="pl" placeholder="e.g. 1.4" step="0.1" min="0.1" max="10"/>
+        <div class="hint">Range: 1.0 – 6.9 cm</div>
+      </div>
+      <div class="field">
+        <label>Petal Width</label>
+        <input type="number" id="pw" placeholder="e.g. 0.2" step="0.1" min="0.1" max="3"/>
+        <div class="hint">Range: 0.1 – 2.5 cm</div>
+      </div>
+    </div>
+
+    <button class="btn-predict" onclick="predict()">🌸 Identify Species</button>
+
+    <div class="error-box" id="errBox"></div>
+
+    <div id="result">
+      <div class="result-card" id="resultCard">
+        <span class="result-emoji" id="rEmoji"></span>
+        <div class="result-species" id="rSpecies"></div>
+        <div class="result-desc" id="rDesc"></div>
+        <div class="confidence-label">Confidence</div>
+        <div class="confidence-bar-wrap">
+          <div class="confidence-bar" id="cBar" style="width:0%"></div>
+        </div>
+        <div class="confidence-val" id="cVal"></div>
+        <div class="prob-section" id="probSection"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── About (Moved Down) ──────────────────────────────────────── -->
+  <div class="divider" style="margin-top:48px"><span>🌸</span></div>
+
+  <p class="section-title">About this Project</p>
+  <p class="section-sub">Built with Python, Scikit-learn &amp; Flask</p>
+
+  <div class="about-card">
+    <p>
+      The classic <strong>Iris dataset</strong> contains 150 flower records across three species —
+      <em>Iris-setosa</em>, <em>Iris-versicolor</em>, and <em>Iris-virginica</em> — each described
+      by four measurements: sepal length, sepal width, petal length, and petal width.
+      The goal is to accurately classify which species a flower belongs to based purely on these measurements.
+    </p>
+
+    <div class="highlight">
+      "Can a machine learn to distinguish flowers just by their measurements — the way a botanist would with a ruler?"
+    </div>
+
+    <p><strong>🔍 Exploratory Data Analysis (EDA)</strong></p>
+    <p>
+      The project began with thorough EDA. After loading the dataset, we discovered
+      <strong>3 duplicate rows</strong> which were removed, bringing the working dataset to
+      <strong>147 clean records</strong>. No missing values were found across any of the 5 columns.
+    </p>
+
+    <div class="metrics">
+      <div class="metric-box"><div class="val">96.67%</div><div class="lbl">Naïve Bayes Accuracy</div></div>
+      <div class="metric-box"><div class="val">93.33%</div><div class="lbl">Other Models</div></div>
+      <div class="metric-box"><div class="val">147</div><div class="lbl">Clean Records</div></div>
+      <div class="metric-box"><div class="val">5</div><div class="lbl">Models Compared</div></div>
+    </div>
+
+    <p>
+      Gaussian Naïve Bayes stood out with <strong>96.67% accuracy</strong>. The model was exported with
+      <code>joblib</code> and now powers this live REST API.
+    </p>
+  </div>
+
+  <!-- ── API Reference ───────────────────────────────────────────── -->
+  <div class="divider" style="margin-top:48px"><span>💐</span></div>
+
+  <p class="section-title">API Reference</p>
+  <p class="section-sub">Base URL: <code>http://127.0.0.1:5000</code></p>
+
+  <div class="api-block">
+    <span class="method">POST</span> <span class="url">/predict</span><br>
+    Content-Type: application/json<br><br>
+    {<br>
+    &nbsp;&nbsp;<span class="key">"sepal_length"</span>: <span class="val">5.1</span>,<br>
+    &nbsp;&nbsp;<span class="key">"sepal_width"</span>:  <span class="val">3.5</span>,<br>
+    &nbsp;&nbsp;<span class="key">"petal_length"</span>: <span class="val">1.4</span>,<br>
+    &nbsp;&nbsp;<span class="key">"petal_width"</span>:  <span class="val">0.2</span><br>
+    }<br><br>
+    <span class="method">GET</span> <span class="url">/species</span> &nbsp;→ list all iris species<br>
+    <span class="method">GET</span> <span class="url">/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ health check
+  </div>
+
+  <!-- ── Credits ──────────────────────────────────────────────────── -->
+  <footer>
+    <div class="created-by">Created by</div>
+    <div class="creator-name">Rudra Prasad Rout</div>
+    <div>
+      <span class="internship-badge">✨ CodSoft Data Science Internship</span>
+    </div>
+
+    <div class="social-icons">
+      <!-- LinkedIn -->
+      <a href="https://www.linkedin.com/in/routrp07" target="_blank" rel="noopener" title="LinkedIn">
+        <svg viewBox="0 0 24 24" fill="#0A66C2">
+          <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.03-1.85-3.03-1.85 0-2.13 1.45-2.13 2.94v5.66H9.37V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.35-1.85 3.58 0 4.24 2.36 4.24 5.43v6.31zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zm1.78 13.02H3.56V9h3.56v11.45zM22.23 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.46C23.21 24 24 23.23 24 22.28V1.72C24 .77 23.21 0 22.23 0z"/>
+        </svg>
+      </a>
+      <!-- GitHub -->
+      <a href="https://github.com/rudraprasadrout" target="_blank" rel="noopener" title="GitHub">
+        <svg viewBox="0 0 24 24" fill="#1a1523">
+          <path d="M12 .3a12 12 0 0 0-3.79 23.4c.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61a3.18 3.18 0 0 0-1.33-1.75c-1.09-.74.08-.73.08-.73a2.52 2.52 0 0 1 1.84 1.24 2.56 2.56 0 0 0 3.5 1 2.56 2.56 0 0 1 .76-1.6c-2.67-.3-5.47-1.33-5.47-5.93a4.64 4.64 0 0 1 1.23-3.22 4.3 4.3 0 0 1 .12-3.17s1-.32 3.3 1.23a11.37 11.37 0 0 1 6.01 0c2.3-1.55 3.3-1.23 3.3-1.23a4.3 4.3 0 0 1 .12 3.17 4.64 4.64 0 0 1 1.23 3.22c0 4.61-2.81 5.63-5.48 5.93a2.87 2.87 0 0 1 .82 2.23v3.3c0 .32.21.7.82.58A12 12 0 0 0 12 .3z"/>
+        </svg>
+      </a>
+      <!-- Portfolio -->
+      <a href="https://rprout.netlify.app" target="_blank" rel="noopener" title="Portfolio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#d4547a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </a>
+    </div>
+    <div class="footer-flowers">🌸 🌺 🌼 🌷 🌻</div>
+  </footer>
+</div>
+
+<script>
+  // ── Falling petals generator ──────────────────────────────────
+  const canvas = document.getElementById('bgCanvas');
+  const colours = ['#f2c4ce','#d4547a','#b07fc4','#f8e1ea','#e8d5f5','#fce4ec'];
+  for (let i = 0; i < 28; i++) {
+    const p = document.createElement('div');
+    p.className = 'petal';
+    p.style.cssText = `
+      left: ${Math.random()*100}vw;
+      width: ${10+Math.random()*14}px;
+      height: ${16+Math.random()*18}px;
+      background: ${colours[Math.floor(Math.random()*colours.length)]};
+      animation-duration: ${7+Math.random()*9}s;
+      animation-delay: ${Math.random()*10}s;
+      opacity: 0;
+      border-radius: ${Math.random()>0.5 ? '50% 0 50% 0' : '0 50% 0 50%'};
+    `;
+    canvas.appendChild(p);
+  }
+
+  // ── Predict ───────────────────────────────────────────────────
+  async function predict() {
+    const sl = document.getElementById('sl').value;
+    const sw = document.getElementById('sw').value;
+    const pl = document.getElementById('pl').value;
+    const pw = document.getElementById('pw').value;
+
+    const errBox = document.getElementById('errBox');
+    const result  = document.getElementById('result');
+    errBox.style.display = 'none';
+    result.style.display  = 'none';
+
+    if (!sl || !sw || !pl || !pw) {
+      errBox.textContent = '🌷 Please fill in all four measurements before identifying.';
+      errBox.style.display = 'block'; return;
+    }
+
+    const btn = document.querySelector('.btn-predict');
+    btn.disabled = true;
+    btn.textContent = '🌸 Identifying…';
+
+    try {
+      const res  = await fetch('http://127.0.0.1:5000/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sepal_length: +sl, sepal_width: +sw,
+          petal_length: +pl, petal_width:  +pw,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        errBox.textContent = '⚠️ ' + (data.error || 'API error');
+        errBox.style.display = 'block'; return;
+      }
+
+      // ── Populate result card ───────────────────────────────
+      const card = document.getElementById('resultCard');
+      card.style.background =
+        `linear-gradient(135deg, ${data.color}dd, ${data.color}88)`;
+
+      document.getElementById('rEmoji').textContent   = data.emoji;
+      document.getElementById('rSpecies').textContent = data.prediction;
+      document.getElementById('rDesc').textContent    = data.description;
+
+      const confNum = parseFloat(data.confidence);
+      document.getElementById('cVal').textContent = data.confidence;
+
+      result.style.display = 'block';
+      setTimeout(() => {
+        document.getElementById('cBar').style.width = confNum + '%';
+      }, 100);
+
+      // ── Probability bars ───────────────────────────────────
+      const ps = document.getElementById('probSection');
+      ps.innerHTML = '';
+      for (const [sp, prob] of Object.entries(data.probabilities)) {
+        const pct = (prob * 100).toFixed(1);
+        ps.innerHTML += `
+          <div class="prob-row">
+            <div class="prob-row-top"><span>${sp}</span><span>${pct}%</span></div>
+            <div class="prob-mini-bar-wrap">
+              <div class="prob-mini-bar" id="pb_${sp.replace(/-/g,'_')}"
+                   style="width:0%"></div>
+            </div>
+          </div>`;
+      }
+      setTimeout(() => {
+        for (const [sp, prob] of Object.entries(data.probabilities)) {
+          const el = document.getElementById('pb_' + sp.replace(/-/g,'_'));
+          if (el) el.style.width = (prob * 100) + '%';
+        }
+      }, 150);
+
+    } catch (err) {
+      errBox.textContent =
+        '🔌 Could not reach the API. Make sure API is running on http://127.0.0.1:5000';
+      errBox.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🌸 Identify Species';
+    }
+  }
+
+  // Allow Enter key to trigger prediction
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') predict();
+  });
+</script>
+</body>
+</html>
