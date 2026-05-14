@@ -530,7 +530,7 @@
   <div class="divider" style="margin-top:48px"><span>💐</span></div>
 
   <p class="section-title">API Reference</p>
-  <p class="section-sub">Base URL: <code>http://127.0.0.1:5000</code></p>
+  <p class="section-sub">Base URL: <code>https://iris-flower-classification-4oav.onrender.com</code></p>
 
   <div class="api-block">
     <span class="method">POST</span> <span class="url">/predict</span><br>
@@ -621,7 +621,7 @@
     btn.textContent = '🌸 Identifying…';
 
     try {
-      const res  = await fetch('http://127.0.0.1:5000/predict', {
+      const res  = await fetch('https://iris-flower-classification-4oav.onrender.com/predict', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -677,7 +677,7 @@
 
     } catch (err) {
       errBox.textContent =
-        '🔌 Could not reach the API. Make sure API is running on http://127.0.0.1:5000';
+        '🔌 Could not reach the API. Make sure API is running on https://iris-flower-classification-4oav.onrender.com';
       errBox.style.display = 'block';
     } finally {
       btn.disabled = false;
