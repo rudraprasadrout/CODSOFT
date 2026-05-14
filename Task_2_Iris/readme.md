@@ -7,7 +7,7 @@ This repository contains the implementation for **Task 3** of the CODSOFT Machin
 ### 🌐 Live Deployment
 
 * **🚀 Demo Web App:** [Iris Classifier Interface](https://irisclassifiationrp.netlify.app/)
-* **🔌 API Endpoint:** [Flask Backend on Render](https://www.google.com/search?q=https://iris-flower-classification-4oav.onrender.com/predict)
+* **🔌 API Endpoint:** [Flask Backend on Render](https://iris-flower-classification-4oav.onrender.com)
 
 ---
 
