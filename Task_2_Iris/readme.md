@@ -1,6 +1,6 @@
-# 🌸 Iris Flower Classification | CODSOFT Task 3
+# 🌸 Iris Flower Classification | CODSOFT Task 2
 
-This repository contains the implementation for **Task 3** of the CODSOFT Machine Learning Internship. The project involves building a classification system that automatically identifies flower species based on their sepal and petal measurements.
+This repository contains the implementation for **Task 2** of the CODSOFT Machine Learning Internship. The project involves building a classification system that automatically identifies flower species based on their sepal and petal measurements.
 
 ---
 
