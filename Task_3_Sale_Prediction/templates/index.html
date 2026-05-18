@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Optimization Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --brand-primary: #2563eb;
+            --brand-hover: #1d4ed8;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .dashboard-container {
+            max-width: 1040px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 1.2fr 1fr;
+            }
+            .header-banner, .footer-credits {
+                grid-column: span 2;
+            }
+        }
+
+        /* Top Banner Header */
+        .header-banner {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #ffffff;
+            padding: 35px 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-banner::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 300px;
+            height: 300px;
+            background: rgba(37, 99, 234, 0.1);
+            border-radius: 50%;
+            filter: blur(40px);
+        }
+
+        .tag-badge {
+            display: inline-block;
+            background: rgba(37, 99, 234, 0.2);
+            color: #60a5fa;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 6px 12px;
+            border-radius: 100px;
+            margin-bottom: 14px;
+            border: 1px solid rgba(37, 99, 234, 0.3);
+        }
+
+        .header-banner h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        .header-banner p {
+            color: #94a3b8;
+            font-size: 1rem;
+            max-width: 700px;
+        }
+
+        /* General Card Layout */
+        .card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1e293b;
+        }
+
+        .card-title i {
+            color: var(--brand-primary);
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #334155;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper .currency-symbol {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 14px 12px 32px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+            background-color: #fff;
+            box-shadow: 0 0 0 4px rgba(37, 99, 234, 0.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background-color: var(--brand-primary);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--brand-hover);
+        }
+
+        /* Dynamic Output UI */
+        .output-panel {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f8fafc;
+            border: 1px dashed var(--border-color);
+            display: none;
+        }
+
+        .output-panel.active {
+            display: block;
+        }
+
+        .metric-display {
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--success-color);
+            margin-top: 5px;
+        }
+
+        /* About Section / Project Specifics */
+        .about-text {
+            font-size: 0.95rem;
+            color: #475569;
+            margin-bottom: 20px;
+        }
+
+        .model-perf-list {
+            list-style: none;
+            margin-top: 15px;
+        }
+
+        .model-perf-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        .model-perf-item:last-child {
+            border-bottom: none;
+        }
+
+        .model-name {
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .model-score {
+            font-family: monospace;
+            font-weight: 600;
+            color: var(--brand-primary);
+        }
+
+        .model-score.highlight {
+            color: var(--success-color);
+            background-color: #ecfdf5;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Footer / Modern Icon-based Credits */
+        .footer-credits {
+            border-top: 1px solid var(--border-color);
+            padding-top: 30px;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        @media (min-width: 600px) {
+            .footer-credits {
+                flex-direction: row;
+            }
+        }
+
+        .developer-info {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .developer-info strong {
+            color: #1e293b;
+        }
+
+        .social-icons-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .social-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: #475569;
+            border-radius: 50%;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 1.2rem;
+        }
+
+        .social-link:hover {
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .social-link.linkedin:hover { background-color: #0077b5; border-color: #0077b5; }
+        .social-link.github:hover { background-color: #24292e; border-color: #24292e; }
+        .social-link.portfolio:hover { background-color: var(--brand-primary); border-color: var(--brand-primary); }
+
+        /* Spinner utility */
+        .spinner {
+            display: none;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--brand-primary);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+
+        <header class="header-banner">
+            <span class="tag-badge">Task 3 • CodSoft Data Science Internship</span>
+            <h1>Sales Prediction Matrix</h1>
+            <p>An administrative projection terminal engineered to evaluate and forecast conversion returns based on specialized marketing capital allocations.</p>
+        </header>
+
+        <main class="card">
+            <h2 class="card-title">
+                <i class="fa-solid fa-sliders"></i> Budget Variables Configuration
+            </h2>
+            <form id="predictionForm">
+                <div class="form-group">
+                    <label for="tv_input">TV Advertising Budget</label>
+                    <div class="input-wrapper">
+                        <span class="currency-symbol">$</span>
+                        <input type="number" id="tv_input" class="form-control" placeholder="0.00" step="0.01" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="radio_input">Radio Advertising Budget</label>
+                    <div class="input-wrapper">
+                        <span class="currency-symbol">$</span>
+                        <input type="number" id="radio_input" class="form-control" placeholder="0.00" step="0.01" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="newspaper_input">Newspaper Advertising Budget</label>
+                    <div class="input-wrapper">
+                        <span class="currency-symbol">$</span>
+                        <input type="number" id="newspaper_input" class="form-control" placeholder="0.00" step="0.01" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span>Generate Forecast</span>
+                    <div class="spinner" id="btnSpinner"></div>
+                </button>
+            </form>
+
+            <div class="output-panel" id="resultPanel">
+                <div class="metric-display">
+                    <div class="metric-label">Estimated Yield Valuation</div>
+                    <div class="metric-value" id="predictionOutput">$0.00</div>
+                </div>
+            </div>
+        </main>
+
+        <aside class="card">
+            <h2 class="card-title">
+                <i class="fa-solid fa-circle-info"></i> Project Specifications
+            </h2>
+            <p class="about-text">
+                This deployment establishes an evaluation portal analyzing how advertising investments across distinct media channels interact to govern net unit conversions. 
+            </p>
+            <p class="about-text">
+                The exploratory analytical phase demonstrated clear non-linear correlations within multi-tiered advertising ecosystems, validating the selection of ensemble techniques.
+            </p>
+
+            <h3 class="card-title" style="font-size: 1rem; margin-top: 10px; margin-bottom: 10px;">
+                <i class="fa-solid fa-chart-line"></i> Evaluated Model Matrix
+            </h3>
+            <ul class="model-perf-list">
+                <li class="model-perf-item">
+                    <span class="model-name">Random Forest Regressor</span>
+                    <span class="model-score">R²: 0.9535</span>
+                </li>
+                <li class="model-perf-item" style="background-color: #fdfdfd;">
+                    <span class="model-name"><strong>Gradient Boosting Regressor</strong></span>
+                    <span class="model-score highlight">R²: 0.9594</span>
+                </li>
+                <li class="model-perf-item">
+                    <span class="model-name">XGB Regressor</span>
+                    <span class="model-score">R²: 0.9529</span>
+                </li>
+            </ul>
+            <p class="about-text" style="font-size: 0.82rem; margin-top: 12px; font-style: italic; color: var(--text-muted);">
+                * The Gradient Boosting Regressor was serialized as the champion operational model due to its superior variance explanation performance.
+            </p>
+        </aside>
+
+        <footer class="footer-credits">
+            <div class="developer-info">
+                Developed by <strong>Rudra Prasad Rout</strong> <br> 
+            </div>
+            <div class="social-icons-group">
+                <a href="https://www.linkedin.com/in/routrp07" target="_blank" class="social-link linkedin" title="LinkedIn Profile">
+                    <i class="fa-brands fa-linkedin-in"></i>
+                </a>
+                <a href="https://github.com/rudraprasadrout" target="_blank" class="social-link github" title="GitHub Repository">
+                    <i class="fa-brands fa-github"></i>
+                </a>
+                <a href="https://rprout.netlify.app/" target="_blank" class="social-link portfolio" title="Professional Portfolio">
+                    <i class="fa-solid fa-briefcase"></i>
+                </a>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const spinner = document.getElementById('btnSpinner');
+            const resultPanel = document.getElementById('resultPanel');
+            const predictionOutput = document.getElementById('predictionOutput');
+
+            // Collect variables
+            const tv = parseFloat(document.getElementById('tv_input').value);
+            const radio = parseFloat(document.getElementById('radio_input').value);
+            const newspaper = parseFloat(document.getElementById('newspaper_input').value);
+
+            // Establish loading visual indicators
+            submitBtn.disabled = true;
+            spinner.style.display = 'block';
+            resultPanel.classList.remove('active');
+
+            // Local API Contract Pointer
+            const apiEndpoint = 'http://127.0.0.1:5000/predict';
+
+            try {
+                const response = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        TV: tv,
+                        Radio: radio,
+                        Newspaper: newspaper
+                    })
+                });
+
+                const resultData = await response.json();
+
+                if (response.ok) {
+                    const value = resultData.prediction !== undefined ? resultData.prediction : resultData.predictions[0];
+                    predictionOutput.textContent = `$ ${value.toFixed(2)}`;
+                    predictionOutput.style.color = 'var(--success-color)';
+                } else {
+                    predictionOutput.textContent = resultData.error || 'Server Processing Error';
+                    predictionOutput.style.color = '#ef4444';
+                }
+            } catch (error) {
+                console.error('Network Exception:', error);
+                predictionOutput.textContent = 'API Server Offline';
+                predictionOutput.style.color = '#ef4444';
+            } finally {
+                submitBtn.disabled = false;
+                spinner.style.display = 'none';
+                resultPanel.classList.add('active');
+            }
+        });
+    </script>
+</body>
+</html>
