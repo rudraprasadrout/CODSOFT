@@ -13,7 +13,7 @@ This project was developed as part of the CodSoft Machine Learning Internship. I
 
 ## 🌐 Live Deployment
 
-- 🚀 Demo Web App: Titanic Survival Predictor (https://titanicoracle.netlify.app/)
+- 🚀 Demo Web App: Titanic Survival Predictor ([https://titanicsurvivalrp.netlify.app/])
 - 🔌 Prediction API: Render API Endpoint (https://titanic-survival-prediction-d6bw.onrender.com)
 
 ---
